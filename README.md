@@ -6,15 +6,15 @@
 
 You can use any HTTP or GraphQL client to connect to a GraphQL API on AppSync.
 
-For front-end web and mobile development, we recommend using the  [Amplify](https://aws-amplify.github.io/)  clients which are optimized to connect to the AppSync backend.
+For front-end web and mobile development, we recommend using the [Amplify](https://aws-amplify.github.io/) clients which are optimized to connect to the AppSync backend.
 
-* For DynamoDB data sources, use the DataStore category in the Amplify client. It provides the best developer experience and built-in conflict detection and resolution.
-* For non-DynamoDB data sources in scenarios where you have no offline requirements, use the API (GraphQL) category in the Amplify client.
-* For use cases where you are utilizing the Apollo V3 client, use the Apollo Links in this repository to help with authorization and subscriptions.
+- For DynamoDB data sources, use the DataStore category in the Amplify client. It provides the best developer experience and built-in conflict detection and resolution.
+- For non-DynamoDB data sources in scenarios where you have no offline requirements, use the API (GraphQL) category in the Amplify client.
+- For use cases where you are utilizing the Apollo V3 client, use the Apollo Links in this repository to help with authorization and subscriptions.
 
 ## [AWS AppSync](https://aws.amazon.com/appsync/) Links for Apollo V3
 
-If you would like to use the [Apollo JavaScript client version 3](https://www.apollographql.com/docs/react/) to connect to your AppSync GraphQL API, this repository (on the current stable branch) provides Apollo links to use the different AppSync authorization modes, and to setup subscriptions over web sockets. Please log questions for this client SDK in this repo and questions for the AppSync service in the  [official AWS AppSync forum](https://forums.aws.amazon.com/forum.jspa?forumID=280&start=0) .
+If you would like to use the [Apollo JavaScript client version 3](https://www.apollographql.com/docs/react/) to connect to your AppSync GraphQL API, this repository (on the current stable branch) provides Apollo links to use the different AppSync authorization modes, and to setup subscriptions over web sockets. Please log questions for this client SDK in this repo and questions for the AppSync service in the [official AWS AppSync forum](https://forums.aws.amazon.com/forum.jspa?forumID=280&start=0) .
 
 ![npm](https://img.shields.io/npm/dm/aws-appsync-auth-link.svg)
 ![npm](https://img.shields.io/npm/dm/aws-appsync-subscription-link.svg)
@@ -88,23 +88,23 @@ npx pod-install
 
 Please visit the [documentation with the Amplify Framework](https://aws-amplify.github.io/docs/js/api) for detailed instructions.
 
-* [React / React Native](#react--react-native)
-* [Using Authorization and Subscription links with Apollo Client V3 (No offline support)](#using-authorization-and-subscription-links-with-apollo-client-v3-no-offline-support)
-  * [Queries and Subscriptions using Apollo V3](#queries-and-subscriptions-using-apollo-v3)
-* [Creating a client (Apollo V2)](#creating-a-client-apollo-v2)
-  * [Queries](#queries)
-  * [Mutations & optimistic UI (with graphqlMutation helper)](#mutations--optimistic-ui-with-graphqlmutation-helper)
-  * [Mutations & optimistic UI (without graphqlMutation helper)](#mutations--optimistic-ui-without-graphqlmutation-helper)
-  * [Subscriptions (with buildSubscription helper)](#subscriptions-with-buildsubscription-helper)
-  * [Subscriptions (without buildSubscription helper)](#subscriptions-without-buildsubscription-helper)
-* [Offline configuration (Apollo V2)](#offline-configuration-apollo-v2)
-  * [Error handling](#error-handling)
-  * [Custom storage engine](#custom-storage-engine)
-  * [Offline helpers](#offline-helpers)
-* [Vue](#vue)
-  * [main.js](#mainjs)
-  * [App.vue](#appvue)
-  * [connected component](#connected-component)
+- [React / React Native](#react--react-native)
+- [Using Authorization and Subscription links with Apollo Client V3 (No offline support)](#using-authorization-and-subscription-links-with-apollo-client-v3-no-offline-support)
+  - [Queries and Subscriptions using Apollo V3](#queries-and-subscriptions-using-apollo-v3)
+- [Creating a client (Apollo V2)](#creating-a-client-apollo-v2)
+  - [Queries](#queries)
+  - [Mutations & optimistic UI (with graphqlMutation helper)](#mutations--optimistic-ui-with-graphqlmutation-helper)
+  - [Mutations & optimistic UI (without graphqlMutation helper)](#mutations--optimistic-ui-without-graphqlmutation-helper)
+  - [Subscriptions (with buildSubscription helper)](#subscriptions-with-buildsubscription-helper)
+  - [Subscriptions (without buildSubscription helper)](#subscriptions-without-buildsubscription-helper)
+- [Offline configuration (Apollo V2)](#offline-configuration-apollo-v2)
+  - [Error handling](#error-handling)
+  - [Custom storage engine](#custom-storage-engine)
+  - [Offline helpers](#offline-helpers)
+- [Vue](#vue)
+  - [main.js](#mainjs)
+  - [App.vue](#appvue)
+  - [connected component](#connected-component)
 
 ### React / React Native
 
@@ -119,15 +119,26 @@ For versions of the Apollo client newer than 2.4.6 you can use custom links for 
 import { createAuthLink } from "aws-appsync-auth-link";
 import { createSubscriptionHandshakeLink } from "aws-appsync-subscription-link";
 
-import { ApolloLink } from "apollo-link";
-import { createHttpLink } from "apollo-link-http";
-import ApolloClient from "apollo-client";
-import { InMemoryCache } from "apollo-cache-inmemory";
+import {
+  ApolloProvider,
+  ApolloClient,
+  InMemoryCache,
+  HttpLink,
+  ApolloLink,
+} from "@apollo/client";
 
 import appSyncConfig from "./aws-exports";
 
+/* The HTTPS endpoint of the AWS AppSync API 
+(e.g. *https://aaaaaaaaaaaaaaaaaaaaaaaaaa.appsync-api.us-east-1.amazonaws.com/graphql*). 
+[Custom domain names](https://docs.aws.amazon.com/appsync/latest/devguide/custom-domain-name.html) can also be supplied here (e.g. *https://api.yourdomain.com/graphql*). 
+Custom domain names can have any format, but must end with `/graphql` 
+(see https://graphql.org/learn/serving-over-http/#uris-routes). */
 const url = appSyncConfig.aws_appsync_graphqlEndpoint;
+
+
 const region = appSyncConfig.aws_appsync_region;
+
 const auth = {
   type: appSyncConfig.aws_appsync_authenticationType,
   apiKey: appSyncConfig.aws_appsync_apiKey,
@@ -135,7 +146,7 @@ const auth = {
   // credentials: async () => credentials, // Required when you use IAM-based auth.
 };
 
-const httpLink = createHttpLink({ uri: url });
+const httpLink = new HttpLink({ uri: url });
 
 const link = ApolloLink.from([
   createAuthLink({ url, region, auth }),
@@ -146,6 +157,10 @@ const client = new ApolloClient({
   link,
   cache: new InMemoryCache(),
 });
+
+const ApolloWrapper = ({ children }) => {
+  return <ApolloProvider client={client}>{children}</ApolloProvider>;
+};
 ```
 
 #### Queries and Subscriptions using Apollo V3
@@ -251,10 +266,14 @@ import AWSAppSyncClient from "aws-appsync";
 import AppSyncConfig from "./aws-exports";
 import { ApolloProvider } from "react-apollo";
 import { Rehydrated } from "aws-appsync-react"; // this needs to also be installed when working with React
-
 import App from "./App";
 
 const client = new AWSAppSyncClient({
+  /* The HTTPS endpoint of the AWS AppSync API 
+  (e.g. *https://aaaaaaaaaaaaaaaaaaaaaaaaaa.appsync-api.us-east-1.amazonaws.com/graphql*). 
+  [Custom domain names](https://docs.aws.amazon.com/appsync/latest/devguide/custom-domain-name.html) can also be supplied here (e.g. *https://api.yourdomain.com/graphql*). 
+  Custom domain names can have any format, but must end with `/graphql` 
+  (see https://graphql.org/learn/serving-over-http/#uris-routes). */
   url: AppSyncConfig.aws_appsync_graphqlEndpoint,
   region: AppSyncConfig.aws_appsync_region,
   auth: {
@@ -561,8 +580,8 @@ export default graphql(listPosts, {
 
 When using the AWS AppSync SDK offline capabilities (e.g. `disableOffline: false`), you can provide configurations for the following:
 
-* Error handling
-* Custom storage engine
+- Error handling
+- Custom storage engine
 
 #### Error handling
 
